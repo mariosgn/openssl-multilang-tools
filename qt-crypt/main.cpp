@@ -8,9 +8,43 @@
 #include <openssl/aes.h>
 #include <openssl/evp.h>
 
-//ok
-//openssl enc -e -aes-256-cbc -salt -pass pass:ASD -in ciao_file.txt -out asd.ssl
-//openssl enc -d -aes-256-cbc -salt -pass pass:ASD -in encoded.ssl
+/*
+
+echo hello > plain_text.txt
+
+rm *.ssl *.dxt
+
+./qt-crypt --enc ASD plain_text.txt  qt_encripted.ssl
+./qt-crypt --dec ASD qt_encripted.ssl  qt_decoded_text.dxt
+openssl enc -e -aes-256-cbc -salt -pass pass:ASD -in plain_text.txt -out ossl_encripted.ssl
+openssl enc -d -aes-256-cbc -salt -pass pass:ASD -in ossl_encripted.ssl -out ossl_decoded_text.dxt
+
+to test:
+
+openssl enc -e -aes-256-cbc -salt -pass pass:ASD -in plain_text.txt -out ossl_encripted.ssl
+./qt-crypt --dec ASD ossl_encripted.ssl  qt_decoded_text.dxt
+cat qt_decoded_text.dxt
+
+./qt-crypt --enc ASD plain_text.txt  qt_encripted.ssl
+openssl enc -d -aes-256-cbc -salt -pass pass:ASD -in qt_encripted.ssl -out ossl_decoded_text.dxt
+cat ossl_decoded_text.dxt
+
+
+
+
+base64
+
+openssl enc -e -aes-256-cbc -salt -base64 -pass pass:ASD -in plain_text.txt -out ossl_encripted.ssl
+./qt-crypt --dec --base64 ASD ossl_encripted.ssl  qt_decoded_text.dxt
+cat qt_decoded_text.dxt
+
+./qt-crypt --enc --base64 ASD plain_text.txt  qt_encripted.ssl
+openssl enc -d -aes-256-cbc -base64 -salt -pass pass:ASD -in qt_encripted.ssl -out ossl_decoded_text.dxt
+cat ossl_decoded_text.dxt
+
+
+
+*/
 
 
 QByteArray encript(const QByteArray &data, const QByteArray &key)
@@ -138,6 +172,12 @@ int main(int argc, char *argv[])
         enc = true;
     }
 
+    bool base64;
+    if ( args.contains("--base64") )
+    {
+        base64 = true;
+    }
+
     QByteArray pass = QString( args.at( args.size()-3 ) ).toLatin1() ;
     QByteArray infile = QString( args.at( args.size()-2 ) ).toLatin1() ;
     QByteArray outfile = QString( args.at( args.size()-1 ) ).toLatin1() ;
@@ -157,9 +197,22 @@ int main(int argc, char *argv[])
     {
         err << "Encoding with password " << pass << "\n";
         res = encript(fInBuff, pass);
+
+        if ( base64 )
+        {
+            err << "Using base64\n";
+            res = res.toBase64();
+            res.append('/n');
+        }
     }
     else
     {
+        if ( base64 )
+        {
+            err << "Using base64\n";
+            fInBuff = QByteArray::fromBase64(fInBuff);
+        }
+
         err << "Decoding with password " << pass<< "\n";
         res = decript(fInBuff, pass);
     }
